@@ -1,7 +1,7 @@
 from pathlib import Path
 
-cdr_root = Path("/Users/prahladbhat/Downloads/sabdab_dataset/fasta/cdrs")
-output_dir = Path("/Users/prahladbhat/Downloads/sabdab_dataset/fasta")
+cdr_root = Path("/Users/prahladbhat/Downloads/sabdab_dataset/sabdabfasta/cdrs")
+output_dir = Path("/Users/prahladbhat/Downloads/sabdab_dataset/sabdabfasta")
 
 heavy_output = output_dir / "heavy_cdrs_merged.fasta"
 light_output = output_dir / "light_cdrs_merged.fasta"

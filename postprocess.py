@@ -4,7 +4,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 # --- Paths ---
 tsv_path = Path("/Users/prahladbhat/Downloads/sabdab_dataset/sabdab_structures/sabdab_summary_all.tsv")
-fasta_root = Path("/Users/prahladbhat/Downloads/sabdab_dataset/fasta")
+fasta_root = Path("/Users/prahladbhat/Downloads/sabdab_dataset/sabdabfasta")
 
 # Standard FASTA directories
 dirs = {
@@ -58,7 +58,7 @@ def get_metadata(pdb_id, chain_type):
         antibody = True
         return fragment, nanobody, scfv, source, antibody, tsv_row
     except Exception as e:
-        print(f"❌ Failed to get metadata for {pdb_id}: {e}")
+        print(f"Failed to get metadata for {pdb_id}: {e}")
         return "None", False, False, "unknown", True, None
 
 # --- Process a single FASTA file (normal or CDR) ---
@@ -75,7 +75,7 @@ def process_fasta_file(fasta_file, seq_type, cdr=None):
                     seq_lines.append(line)
         seq = "".join(seq_lines)
         if not seq:
-            print(f"⚠️ Empty sequence for {fasta_file}")
+            print(f"Empty sequence for {fasta_file}")
             return None
 
         # PDB ID from header or filename
@@ -116,7 +116,7 @@ def process_fasta_file(fasta_file, seq_type, cdr=None):
         return f"{header}\n{seq}\n\n"
 
     except Exception as e:
-        print(f"❌ Failed processing {fasta_file}: {e}")
+        print(f"Failed processing {fasta_file}: {e}")
         return None
 
 # --- Combine FASTAs (normal) ---
@@ -132,7 +132,7 @@ def combine_fasta_multithread(fasta_dir, output_file, seq_type, max_workers=8):
                 if entry:
                     all_entries.append(entry)
             except Exception as e:
-                print(f"❌ Exception for {fasta_file}: {e}")
+                print(f"Exception for {fasta_file}: {e}")
     with open(output_file, "w") as out_f:
         out_f.writelines(all_entries)
     print(f"✅ Wrote {len(all_entries)} sequences to {output_file}")
@@ -153,7 +153,7 @@ def combine_cdrs_multithread(cdr_root, fasta_root, max_workers=8):
                     if entry:
                         all_entries.append(entry)
                 except Exception as e:
-                    print(f"❌ Exception for {fasta_file}: {e}")
+                    print(f"Exception for {fasta_file}: {e}")
         with open(output_file, "w") as out_f:
             out_f.writelines(all_entries)
         print(f"✅ Wrote {len(all_entries)} sequences to {output_file}")
@@ -172,7 +172,7 @@ def combine_framework_multithread(framework_dirs, framework_outputs, max_workers
                     if entry:
                         all_entries.append(entry)
                 except Exception as e:
-                    print(f"❌ Exception for {fasta_file}: {e}")
+                    print(f"Exception for {fasta_file}: {e}")
         with open(output_file, "w") as out_f:
             out_f.writelines(all_entries)
         print(f"✅ Wrote {len(all_entries)} sequences to {output_file}")
