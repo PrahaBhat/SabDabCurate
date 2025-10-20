@@ -95,15 +95,16 @@ class SabDabDatasetV1(Dataset):
         print([resnums[keys][-10:] for keys in resnums.keys()])
         distograms = {}
         for chain, coord in coords.items():
-            distogram = self.compute_distogram(coord)
+            distogram = self.compute_distogram(coord).to(self.device)
             distograms[chain] = distogram
 
         return distograms
 
-    def __init__(self, fasta_dir, structure_dir):
+    def __init__(self, fasta_dir, structure_dir, device='cpu'):
         self.fasta_dir = fasta_dir
         self.structure_dir = structure_dir
         self.data = []
+        self.device = device
 
         fasta_files = [f for f in os.listdir(fasta_dir) if f.endswith(".fasta")]
 

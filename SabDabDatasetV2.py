@@ -116,17 +116,17 @@ class SabDabDatasetV2(Dataset):
             grouped_by_cdr = self.group_by_mask(coord_set, mask)
             for cdr, coord_set in grouped_by_cdr.items():
                 if cdr in (1,2,3):
-                    distogram = self.compute_distogram(coord_set)
+                    distogram = self.compute_distogram(coord_set).to(self.device)
                     distograms[f"{chain[0]}{cdr}"] = distogram
                     print(f"[Wrote] distogram for {chain[0]}{cdr}")
         # we want to return a set of distogram which is a dict of h1, h2, h3, l1, l2, l3:dgram mappings
         return distograms
 
-    def __init__(self, fasta_dir, structure_dir):
+    def __init__(self, fasta_dir, structure_dir, device='cpu'):
         self.fasta_dir = fasta_dir
         self.structure_dir = structure_dir
         self.data = []
-
+        self.device = device
         fasta_files = [f for f in os.listdir(fasta_dir) if f.endswith(".fasta")]
 
         for fasta_file in fasta_files:
@@ -174,6 +174,7 @@ class SabDabDatasetV2(Dataset):
             })
 
         print(f"[INFO] Loaded {len(self.data)} antibody structures.")
+        
 
         
 
