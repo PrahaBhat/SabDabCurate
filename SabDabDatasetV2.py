@@ -5,8 +5,8 @@ import pandas as pd
 import os
 from build3 import chothia_frameworks, chothia_cdrs, three_to_one, is_residue_in_range
 
-fasta_root = "/Users/zacharycohen/Desktop/GitHub/SabDabCurate/sabdabfasta/all_chains"
-structure_root = "/Users/zacharycohen/Desktop/GitHub/SabDabCurate/sabdab_structures/all_structures/chothia"
+fasta_root = "/Users/zacharycohen/Desktop/GitHub/SabDabCurate/sabdab_test/fastas"
+structure_root = "/Users/zacharycohen/Desktop/GitHub/SabDabCurate/sabdab_test/structs"
 
 def parse_multiple_paired_remarks(text):
     result = {}
@@ -33,25 +33,24 @@ def parse_single_ca_line(line):
         raise ValueError("Line is not a valid CA atom line: " + line)
 
     return {
-        'seq': line[21].strip().upper(),          # chain ID
+        'seq': line[21].strip().upper(),          
         'indice': line[22:26].strip(),
-        'x': float(line[30:38].strip()),          # x coordinate
-        'y': float(line[38:46].strip()),          # y coordinate
-        'z': float(line[46:54].strip()),          # z coordinate
+        'x': float(line[30:38].strip()),          
+        'y': float(line[38:46].strip()),          
+        'z': float(line[46:54].strip()),          
     }
 
 class SabDabDatasetV2(Dataset):
 
     def load_fasta(self, filepath):
         sequences = {}
-        id = filepath.split("/")[-1].split(".")[0]
         with open(filepath, 'r') as file:
             lines = file.readlines()
             for idx, line in enumerate(lines):
                 if line.startswith('>'):
                     tag = line.strip().split('_')[1] # L or H
                     sequences[tag] = lines[idx+1].strip()
-        return sequences, id
+        return sequences
 
     def compute_distogram(self, coords, n_bins=64, start_a=2.0, end_a=22.0):
         coords_tensor = torch.tensor(coords)
@@ -108,18 +107,16 @@ class SabDabDatasetV2(Dataset):
 
     def load_structure(self, filepath):
         coords, cdr_mask = self.load_coords(filepath)
-        # assume cdr_mask is a dict of lists, where the keys are the same as coords and the values are lists of 0s and 1,2,3 for H1,H2,H3,L1,L2,L3
 
         distograms = {}
         for chain, coord_set in coords.items(): # chain is H or L
             mask = cdr_mask[chain]
             grouped_by_cdr = self.group_by_mask(coord_set, mask)
             for cdr, coord_set in grouped_by_cdr.items():
-                if cdr in (1,2,3):
+                if cdr in (1,2,3): # 0 is framework, -1 is unknown
                     distogram = self.compute_distogram(coord_set).to(self.device)
                     distograms[f"{chain[0]}{cdr}"] = distogram
                     print(f"[Wrote] distogram for {chain[0]}{cdr}")
-        # we want to return a set of distogram which is a dict of h1, h2, h3, l1, l2, l3:dgram mappings
         return distograms
 
     def __init__(self, fasta_dir, structure_dir, device='cpu'):
@@ -139,7 +136,7 @@ class SabDabDatasetV2(Dataset):
                 print(f"[Warning] PDB file not found for {pdb_id}, skipping.")
                 continue
 
-            sequences, seq_id = self.load_fasta(fasta_path)
+            sequences = self.load_fasta(fasta_path) # {'H': 'SEQ...', 'L': 'SEQ...'}
 
 
             try:
@@ -149,26 +146,12 @@ class SabDabDatasetV2(Dataset):
                 # raise(e)
 
                 continue
+
             distograms = {k.replace("HCHAIN", "H").replace("LCHAIN", "L"): v for k, v in distograms.items()}
-
-            #[REMOVED] sanity check: chains match between FASTA and PDB
-            # missing_chains = [ch for ch in sequences.keys() if ch not in distograms]
-            # if missing_chains:
-            #     print(f"[Warning] Missing distograms for chains {missing_chains} in {pdb_id}")
-            #     print(distograms.keys())
-
-
-
-            # for k, v in distograms.items(): # [REMOVED B/C ALREADY SLICING TO CHOTHIA] ASSUMPTION BASED: Slice because PDB includes extra residues
-            #     if v.shape[0] != len(sequences[k]) or v.shape[1] != len(sequences[k]):
-            #         print(f"[Trimmed] {pdb_id} {k}: {v.shape} -> ({len(sequences[k])}, {len(sequences[k])}, {v.shape[2]})")
-            #         L = len(sequences[k])
-            #         distograms[k] = v[:L, :L, :]
 
 
             self.data.append({
                 "pdb_id": pdb_id,
-                "seq_id": seq_id,
                 "sequences": sequences,         
                 "distograms": distograms        
             })
@@ -184,4 +167,4 @@ class SabDabDatasetV2(Dataset):
     def __getitem__(self, idx):
         return self.data[idx]
 
-test_dataset = SabDabDatasetV2(fasta_root, structure_root) # DO WITH SMALL DATASET FIRST
+test_dataset = SabDabDatasetV2(fasta_root, structure_root) 
